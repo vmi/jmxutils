@@ -1,0 +1,42 @@
+# Texts
+*.conf		text eol=lf
+*.css		text eol=lf
+*.gradle	text eol=lf
+*.html		text eol=lf
+*.importorder	text eol=lf
+*.java		text eol=lf
+*.js		text eol=lf
+*.json		text eol=lf
+*.md		text eol=lf
+*.pl		text eol=lf
+*.prefs		text eol=lf
+*.properties	text eol=lf
+*.py		text eol=lf
+*.rb		text eol=lf
+*.sh		text eol=lf
+*.sql		text eol=lf
+*.txt		text eol=lf
+*.xml		text eol=lf
+*.yaml		text eol=lf
+*.yml		text eol=lf
+
+*.bat		text eol=crlf
+*.cmd		text eol=crlf
+*.ps1		text eol=crlf
+
+# Text but no EoL conversion
+*.csv		-text
+
+# Binaries
+*.jar		binary
+*.war		binary
+*.class		binary
+*.exe		binary
+*.xls		binary
+*.xlsx		binary
+*.doc		binary
+*.docx		binary
+*.ppt		binary
+*.pptx		binary
+*.pdf		binary
+
