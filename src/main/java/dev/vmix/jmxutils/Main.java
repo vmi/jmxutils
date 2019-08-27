@@ -1,6 +1,7 @@
 package dev.vmix.jmxutils;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -203,6 +204,18 @@ public class Main {
             default:
                 break loop;
             }
+        }
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager() {
+
+                @Override
+                public void checkPermission(Permission perm) {
+                }
+
+                @Override
+                public void checkPermission(Permission perm, Object context) {
+                }
+            });
         }
         try (JmxClient client = new JmxClient(host, port)) {
             String cmd = argList.remove(0);
