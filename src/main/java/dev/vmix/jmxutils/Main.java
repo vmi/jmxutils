@@ -47,11 +47,11 @@ public class Main {
 
     private static void help(String... msgs) {
         String[] help = {
-            "Usage: java -jar jmxutils.jar [-h HOST] [-p PORT] COMMAND ARGS ...",
+            "Usage: java -jar jmxutils.jar -h HOST -p PORT COMMAND ARGS ...",
             "",
             "[COMMAND]",
-            "list [PATTERN] - MBean一覧の表示 (PATTERNは正規表現)",
-            "show NAME      - MBean情報の表示"
+            "list [PATTERN] - list MBeans. (PATTERN is written as a regular expression)",
+            "show NAME      - show MBean information."
         };
         if (msgs.length != 0) {
             System.out.println(String.join(System.lineSeparator(), msgs));
