@@ -1,6 +1,7 @@
 package dev.vmix.jmxutils;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,77 +12,44 @@ import java.util.regex.Pattern;
 
 import javax.management.ObjectName;
 
+import static dev.vmix.jmxutils.CliHelper.*;
+
 import dev.vmix.jmxutils.models.JmxMap;
 
 /**
  * JMX Utility Main
  */
+@SuppressWarnings("javadoc")
 public class Main {
+
+    private static final String[] HELP_MESSAGE = {
+        "Usage: java -jar jmxutils.jar -h HOST -p PORT COMMAND ARGS ...",
+        "",
+        "[COMMAND]",
+        "list [PATTERN] - list MBeans. (PATTERN is written as a regular expression)",
+        "show NAME      - show MBean information."
+    };
 
     private static final String USE_CODEBASE_ONLY = "java.rmi.server.useCodebaseOnly";
 
     static {
-        // String oldValue = System.getProperty(USE_CODEBASE_ONLY);
         System.setProperty(USE_CODEBASE_ONLY, "false");
-        // if (!"false".equals(oldValue)) {
-        //     System.err.printf("* %s is changed to false.%n", USE_CODEBASE_ONLY);
-        // }
     }
 
-    private static void exit() {
-        System.exit(0);
-    }
+    PrintStream out;
 
-    private static void abort(String msg) {
-        error(msg);
-        System.exit(1);
-    }
-
-    private static void info(String msg) {
-        System.err.println("[INFO] " + msg);
-    }
-
-    private static void error(String msg) {
-        System.err.println("[ERROR] " + msg);
+    public Main(PrintStream out) {
+        this.out = out;
     }
 
     private static void help(String... msgs) {
-        String[] help = {
-            "Usage: java -jar jmxutils.jar -h HOST -p PORT COMMAND ARGS ...",
-            "",
-            "[COMMAND]",
-            "list [PATTERN] - list MBeans. (PATTERN is written as a regular expression)",
-            "show NAME      - show MBean information."
-        };
         if (msgs.length != 0) {
             System.out.println(String.join(System.lineSeparator(), msgs));
             System.out.println();
-            System.out.println();
         }
-        System.out.println(String.join(System.lineSeparator(), help));
-        System.out.println();
+        System.out.println(String.join(System.lineSeparator(), HELP_MESSAGE));
         System.exit(1);
     }
-
-    //    private static Properties loadProps(String... file) {
-    //        Properties props = new Properties();
-    //        InputStream is;
-    //        try {
-    //            if (file.length == 0) {
-    //                is = Main.class.getResourceAsStream("/jmxutils.properties");
-    //            } else {
-    //                is = new FileInputStream(file[1]);
-    //            }
-    //            props.load(is);
-    //            return props;
-    //        } catch (FileNotFoundException e) {
-    //            abort("File not found: " + file);
-    //            // not reached.
-    //            throw new RuntimeException(e);
-    //        } catch (IOException e) {
-    //            throw new RuntimeException(e);
-    //        }
-    //    }
 
     private static String escape(Object value) {
         if (value == null) {
@@ -101,7 +69,19 @@ public class Main {
         return buf.toString();
     }
 
-    private static void list(JmxClient client, List<String> argList) throws IOException {
+    private static boolean isBasicType(String typeName) {
+        switch (typeName) {
+        case "int":
+        case "long":
+        case "boolean":
+        case "java.lang.String":
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    private void list(JmxClient client, List<String> argList) throws IOException {
         Predicate<String> test;
         if (argList.isEmpty()) {
             test = name -> true;
@@ -113,15 +93,15 @@ public class Main {
         client.getMBeans().forEach(obj -> {
             ObjectName name = obj.getObjectName();
             if (test.test(name.getCanonicalName())) {
-                System.out.println(obj.getObjectName());
+                out.println(obj.getObjectName());
             }
         });
     }
 
-    private static void show(JmxClient client, List<String> argList) throws IOException {
+    private void show(JmxClient client, List<String> argList) throws IOException {
         String objectNameStr = argList.remove(0);
         JmxMap map = client.getMBeanInfo(objectNameStr);
-        System.out.println("{");
+        out.println("{");
         map.walk((walker, elem, isFirst, isLast, parentElemType, parentKeys) -> {
             int level = parentKeys.length + 1;
             String indent = indent(level);
@@ -132,55 +112,44 @@ public class Main {
             case LIST:
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    System.out.printf("%s%s%s%n", indent, escape(elem.getValue()), comma);
+                    out.printf("%s%s%s%n", indent, escape(elem.getValue()), comma);
                     break;
                 case LIST:
-                    System.out.printf("%s[%n", indent);
+                    out.printf("%s[%n", indent);
                     elem.walk(walker, parentKeys, elem.getName());
-                    System.out.printf("%s]%s%n", indent, comma);
+                    out.printf("%s]%s%n", indent, comma);
                     break;
                 case MAP:
-                    System.out.printf("%s{%n", indent);
+                    out.printf("%s{%n", indent);
                     elem.walk(walker, parentKeys, elem.getName());
-                    System.out.printf("%s}%s%n", indent, comma);
+                    out.printf("%s}%s%n", indent, comma);
                     break;
                 }
                 break;
             case MAP:
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    System.out.printf("%s%s: %s%s%n", indent, escape(elem.getName()), escape(elem.getValue()), comma);
+                    out.printf("%s%s: %s%s%n", indent, escape(elem.getName()), escape(elem.getValue()), comma);
                     break;
                 case LIST:
-                    System.out.printf("%s%s: [%n", indent, escape(elem.getName()));
+                    out.printf("%s%s: [%n", indent, escape(elem.getName()));
                     elem.walk(walker, parentKeys, elem.getName());
-                    System.out.printf("%s]%s%n", indent, comma);
+                    out.printf("%s]%s%n", indent, comma);
                     break;
                 case MAP:
-                    System.out.printf("%s%s: {%n", indent, escape(elem.getName()));
+                    out.printf("%s%s: {%n", indent, escape(elem.getName()));
                     elem.walk(walker, parentKeys, elem.getName());
-                    System.out.printf("%s}%s%n", indent, comma);
+                    out.printf("%s}%s%n", indent, comma);
                     break;
                 }
                 break;
             }
             return true;
         });
-        System.out.println("}");
+        out.println("}");
     }
 
-    /**
-     * Main of utilities.
-     *
-     * @param args command line arguments.
-     * @throws Exception exception.
-     */
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            help();
-            return;
-        }
-        List<String> argList = new ArrayList<>(Arrays.asList(args));
+    public void run(List<String> argList) {
         ListIterator<String> iter = argList.listIterator();
         String host = null;
         int port = -1;
@@ -235,11 +204,25 @@ public class Main {
                 help("[ERROR] Illegal subcommand: " + cmd);
                 break;
             }
+        } catch (IOException e) {
+            // TODO 自動生成された catch ブロック
+            e.printStackTrace();
         }
+    }
 
-        //client.getMBeanInfo("java.lang:type=GarbageCollector,name=ConcurrentMarkSweep");
-        //"java.lang:type=GarbageCollector,name=ConcurrentMarkSweep.LastGcInfo.memoryUsageAfterGc.CMS Old Gen.max");
-        //            client.getMBeanInfo(
-        //                "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep.LastGcInfo.memoryUsageAfterGc.CMS Old Gen.used");
+    /**
+     * Main of utilities.
+     *
+     * @param args command line arguments.
+     * @throws Exception exception.
+     */
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            help();
+            return;
+        }
+        Main main = new Main(System.out);
+        List<String> argList = new ArrayList<>(Arrays.asList(args));
+        main.run(argList);
     }
 }
