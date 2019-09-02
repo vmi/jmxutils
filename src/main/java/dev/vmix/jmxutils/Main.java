@@ -51,16 +51,6 @@ public class Main {
         System.exit(1);
     }
 
-    private static String escape(Object value) {
-        if (value == null) {
-            return "null";
-        } else if (value instanceof Boolean || value instanceof Number) {
-            return value.toString();
-        } else {
-            return "\"" + value.toString().replaceAll("([\"\\\\])", "\\$1") + "\"";
-        }
-    }
-
     private static String indent(int level) {
         StringBuilder buf = new StringBuilder(level * 2);
         for (int i = 0; i < level; i++) {
@@ -112,7 +102,7 @@ public class Main {
             case LIST:
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    out.printf("%s%s%s%n", indent, escape(elem.getValue()), comma);
+                    out.printf("%s%s%s%n", indent, JsonUtils.encodeEntity(elem.getValue()), comma);
                     break;
                 case LIST:
                     out.printf("%s[%n", indent);
@@ -129,17 +119,92 @@ public class Main {
             case MAP:
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    out.printf("%s%s: %s%s%n", indent, escape(elem.getName()), escape(elem.getValue()), comma);
+                    out.printf("%s%s: %s%s%n", indent, JsonUtils.encodeEntity(elem.getName()),
+                        JsonUtils.encodeEntity(elem.getValue()), comma);
                     break;
                 case LIST:
-                    out.printf("%s%s: [%n", indent, escape(elem.getName()));
+                    out.printf("%s%s: [%n", indent, JsonUtils.encodeEntity(elem.getName()));
                     elem.walk(walker, parentKeys, elem.getName());
                     out.printf("%s]%s%n", indent, comma);
                     break;
                 case MAP:
-                    out.printf("%s%s: {%n", indent, escape(elem.getName()));
+                    out.printf("%s%s: {%n", indent, JsonUtils.encodeEntity(elem.getName()));
                     elem.walk(walker, parentKeys, elem.getName());
                     out.printf("%s}%s%n", indent, comma);
+                    break;
+                }
+                break;
+            }
+            return true;
+        });
+        out.println("}");
+    }
+
+    private void showVerbose(JmxClient client, List<String> argList) throws IOException {
+        String objectNameStr = argList.remove(0);
+        JmxMap map = client.getMBeanInfo(objectNameStr);
+        out.println("{");
+        map.walk((walker, elem, isFirst, isLast, parentElemType, parentKeys) -> {
+            int level = parentKeys.length + 1;
+            String indent = indent(level);
+            String comma = isLast ? "" : ",";
+            switch (parentElemType) {
+            case ENTITY:
+                throw new IllegalStateException();
+            case LIST:
+                switch (elem.getElemType()) {
+                case ENTITY:
+                    out.printf("%s[%s, %s, %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getValueTypeName()),
+                        JsonUtils.encodeEntity(elem.getValue()),
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
+                    break;
+                case LIST:
+                    out.printf("%s[%s, [%n", indent,
+                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    elem.walk(walker, parentKeys, elem.getName());
+                    out.printf("%s], %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
+                    break;
+                case MAP:
+                    out.printf("%s[%s, {%n", indent,
+                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    elem.walk(walker, parentKeys, elem.getName());
+                    out.printf("%s}, %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
+                    break;
+                }
+                break;
+            case MAP:
+                switch (elem.getElemType()) {
+                case ENTITY:
+                    out.printf("%s%s: [%s, %s, %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getName()),
+                        JsonUtils.encodeEntity(elem.getValueTypeName()),
+                        JsonUtils.encodeEntity(elem.getValue()),
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
+                    break;
+                case LIST:
+                    out.printf("%s%s: [%s, [%n", indent,
+                        JsonUtils.encodeEntity(elem.getName()),
+                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    elem.walk(walker, parentKeys, elem.getName());
+                    out.printf("%s], %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
+                    break;
+                case MAP:
+                    out.printf("%s%s: [%s, {%n", indent,
+                        JsonUtils.encodeEntity(elem.getName()),
+                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    elem.walk(walker, parentKeys, elem.getName());
+                    out.printf("%s}, %s]%s%n", indent,
+                        JsonUtils.encodeEntity(elem.getDescription()),
+                        comma);
                     break;
                 }
                 break;
@@ -197,7 +262,7 @@ public class Main {
                 break;
 
             case "show": // show NAME
-                show(client, argList);
+                showVerbose(client, argList);
                 break;
 
             default:
