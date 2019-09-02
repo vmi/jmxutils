@@ -14,6 +14,7 @@ import javax.management.ObjectName;
 
 import static dev.vmix.jmxutils.CliHelper.*;
 
+import dev.vmix.jmxutils.models.JmxElem.ElemType;
 import dev.vmix.jmxutils.models.JmxMap;
 
 /**
@@ -23,7 +24,7 @@ import dev.vmix.jmxutils.models.JmxMap;
 public class Main {
 
     private static final String[] HELP_MESSAGE = {
-        "Usage: java -jar jmxutils.jar -h HOST -p PORT COMMAND ARGS ...",
+        "Usage: java -jar jmxutils.jar [-v] -h HOST -p PORT COMMAND ARGS ...",
         "",
         "[COMMAND]",
         "list [PATTERN] - list MBeans. (PATTERN is written as a regular expression)",
@@ -88,7 +89,7 @@ public class Main {
         });
     }
 
-    private void show(JmxClient client, List<String> argList) throws IOException {
+    private void show(JmxClient client, List<String> argList, boolean verbose) throws IOException {
         String objectNameStr = argList.remove(0);
         JmxMap map = client.getMBeanInfo(objectNameStr);
         out.println("{");
@@ -96,115 +97,51 @@ public class Main {
             int level = parentKeys.length + 1;
             String indent = indent(level);
             String comma = isLast ? "" : ",";
-            switch (parentElemType) {
-            case ENTITY:
-                throw new IllegalStateException();
-            case LIST:
-                switch (elem.getElemType()) {
-                case ENTITY:
-                    out.printf("%s%s%s%n", indent, JsonUtils.encodeEntity(elem.getValue()), comma);
-                    break;
-                case LIST:
-                    out.printf("%s[%n", indent);
-                    elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s]%s%n", indent, comma);
-                    break;
-                case MAP:
-                    out.printf("%s{%n", indent);
-                    elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s}%s%n", indent, comma);
-                    break;
-                }
-                break;
-            case MAP:
-                switch (elem.getElemType()) {
-                case ENTITY:
-                    out.printf("%s%s: %s%s%n", indent, JsonUtils.encodeEntity(elem.getName()),
-                        JsonUtils.encodeEntity(elem.getValue()), comma);
-                    break;
-                case LIST:
-                    out.printf("%s%s: [%n", indent, JsonUtils.encodeEntity(elem.getName()));
-                    elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s]%s%n", indent, comma);
-                    break;
-                case MAP:
-                    out.printf("%s%s: {%n", indent, JsonUtils.encodeEntity(elem.getName()));
-                    elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s}%s%n", indent, comma);
-                    break;
-                }
-                break;
+            String typeName = "";
+            String value = "";
+            String description = "";
+            if (elem.getElemType() == ElemType.ENTITY) {
+                value = JsonUtils.encodeEntity(elem.getValue());
             }
-            return true;
-        });
-        out.println("}");
-    }
-
-    private void showVerbose(JmxClient client, List<String> argList) throws IOException {
-        String objectNameStr = argList.remove(0);
-        JmxMap map = client.getMBeanInfo(objectNameStr);
-        out.println("{");
-        map.walk((walker, elem, isFirst, isLast, parentElemType, parentKeys) -> {
-            int level = parentKeys.length + 1;
-            String indent = indent(level);
-            String comma = isLast ? "" : ",";
+            if (verbose) {
+                typeName = String.format("[%s, ", JsonUtils.encodeEntity(elem.getValueTypeName()));
+                description = String.format(", %s]", JsonUtils.encodeEntity(elem.getDescription()));
+            }
             switch (parentElemType) {
             case ENTITY:
                 throw new IllegalStateException();
             case LIST:
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    out.printf("%s[%s, %s, %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getValueTypeName()),
-                        JsonUtils.encodeEntity(elem.getValue()),
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s%s%s%s%s%n", indent, typeName, value, description, comma);
                     break;
                 case LIST:
-                    out.printf("%s[%s, [%n", indent,
-                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    out.printf("%s%s[%n", indent, typeName);
                     elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s], %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s]%s%s%n", indent, description, comma);
                     break;
                 case MAP:
-                    out.printf("%s[%s, {%n", indent,
-                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    out.printf("%s%s{%n", indent, typeName);
                     elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s}, %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s}%s%s%n", indent, description, comma);
                     break;
                 }
                 break;
             case MAP:
+                String name = JsonUtils.encodeEntity(elem.getName());
                 switch (elem.getElemType()) {
                 case ENTITY:
-                    out.printf("%s%s: [%s, %s, %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getName()),
-                        JsonUtils.encodeEntity(elem.getValueTypeName()),
-                        JsonUtils.encodeEntity(elem.getValue()),
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s%s: %s%s%s%s%n", indent, name, typeName, value, description, comma);
                     break;
                 case LIST:
-                    out.printf("%s%s: [%s, [%n", indent,
-                        JsonUtils.encodeEntity(elem.getName()),
-                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    out.printf("%s%s: %s[%n", indent, name, typeName);
                     elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s], %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s]%s%s%n", indent, description, comma);
                     break;
                 case MAP:
-                    out.printf("%s%s: [%s, {%n", indent,
-                        JsonUtils.encodeEntity(elem.getName()),
-                        JsonUtils.encodeEntity(elem.getValueTypeName()));
+                    out.printf("%s%s: %s{%n", indent, name, typeName);
                     elem.walk(walker, parentKeys, elem.getName());
-                    out.printf("%s}, %s]%s%n", indent,
-                        JsonUtils.encodeEntity(elem.getDescription()),
-                        comma);
+                    out.printf("%s}%s%s%n", indent, description, comma);
                     break;
                 }
                 break;
@@ -218,6 +155,7 @@ public class Main {
         ListIterator<String> iter = argList.listIterator();
         String host = null;
         int port = -1;
+        boolean verbose = false;
         loop: while (iter.hasNext()) {
             String arg = iter.next();
             switch (arg) {
@@ -234,6 +172,10 @@ public class Main {
                     abort("Invalid port number: " + portStr);
                 }
                 port = Integer.parseInt(portStr);
+                break;
+            case "-v":
+                iter.remove();
+                verbose = true;
                 break;
             default:
                 break loop;
@@ -262,7 +204,7 @@ public class Main {
                 break;
 
             case "show": // show NAME
-                showVerbose(client, argList);
+                show(client, argList, verbose);
                 break;
 
             default:
@@ -270,8 +212,7 @@ public class Main {
                 break;
             }
         } catch (IOException e) {
-            // TODO 自動生成された catch ブロック
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -281,7 +222,7 @@ public class Main {
      * @param args command line arguments.
      * @throws Exception exception.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length == 0) {
             help();
             return;
