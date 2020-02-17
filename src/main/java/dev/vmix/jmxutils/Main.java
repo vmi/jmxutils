@@ -105,7 +105,11 @@ public class Main {
             }
             if (verbose) {
                 typeName = String.format("[%s, ", JsonUtils.encodeEntity(elem.getValueTypeName()));
-                description = String.format(", %s]", JsonUtils.encodeEntity(elem.getDescription()));
+                if (elem.getDescription() == null) {
+                    description = "]";
+                } else {
+                    description = String.format(", %s]", JsonUtils.encodeEntity(elem.getDescription()));
+                }
             }
             switch (parentElemType) {
             case ENTITY:

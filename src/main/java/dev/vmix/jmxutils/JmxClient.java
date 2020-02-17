@@ -84,6 +84,9 @@ public class JmxClient implements Closeable {
                 Object attrValue;
                 String attrType = attrInfo.getType();
                 String attrDesc = attrInfo.getDescription();
+                if (attrDesc != null && (attrDesc.equals(attrName) || attrDesc.equals(attrType))) {
+                    attrDesc = null;
+                }
                 try {
                     attrValue = connection.getAttribute(objectName, attrName);
                 } catch (AttributeNotFoundException | MBeanException | UnmarshalException e) {
