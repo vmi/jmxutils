@@ -61,7 +61,7 @@ public class JmxClient implements Closeable {
         try {
             Set<ObjectInstance> mBeans = connection.queryMBeans(null, null);
             return mBeans.stream().sorted((a, b) -> a.getObjectName().compareTo(b.getObjectName()))
-                .collect(Collectors.toList());
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -80,6 +80,9 @@ public class JmxClient implements Closeable {
             JmxMap map = JmxElemUtils.newEmptyMap(null, info.getClassName(), info.getDescription());
             MBeanAttributeInfo[] attrInfos = info.getAttributes();
             for (MBeanAttributeInfo attrInfo : attrInfos) {
+                if (!attrInfo.isReadable()) {
+                    continue;
+                }
                 String attrName = attrInfo.getName();
                 Object attrValue;
                 String attrType = attrInfo.getType();
