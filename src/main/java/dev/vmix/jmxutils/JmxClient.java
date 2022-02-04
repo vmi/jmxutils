@@ -34,16 +34,22 @@ public class JmxClient implements Closeable {
     private final JMXConnector connector;
     private final MBeanServerConnection connection;
 
+    public static String getConnectorAddress(String host, int port) {
+        return String.format("service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi", host, port);
+    }
+
+    public static String getConnectorAddress(int pid) {
+        return JmxLocalConnector.getLocalConnectorAddress(pid);
+    }
+
     /**
      * Constructor.
      *
-     * @param host host.
-     * @param port port.
+     * @param addr JMX connector address.
      */
-    public JmxClient(String host, int port) {
-        String url = String.format("service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi", host, port);
+    public JmxClient(String addr) {
         try {
-            JMXServiceURL target = new JMXServiceURL(url);
+            JMXServiceURL target = new JMXServiceURL(addr);
             connector = JMXConnectorFactory.connect(target);
             connection = connector.getMBeanServerConnection();
         } catch (IOException e) {

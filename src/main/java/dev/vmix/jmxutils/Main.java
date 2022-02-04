@@ -24,6 +24,13 @@ public class Main {
 
     private static final String[] HELP_MESSAGE = {
         "Usage: java -jar jmxutils.jar [-v] -h HOST -p PORT COMMAND ARGS ...",
+        "       java -jar jmxutils.jar [-v] -P PID COMMAND ARGS ...",
+        "",
+        "[OPTIONS]",
+        "-v      - verbose mode",
+        "-h HOST - target host",
+        "-p PORT - target port",
+        "-P PID  - target PID",
         "",
         "[COMMAND]",
         "list [PATTERN] - list MBeans. (PATTERN is written as a regular expression)",
@@ -146,6 +153,7 @@ public class Main {
         ListIterator<String> iter = argList.listIterator();
         String host = null;
         int port = -1;
+        int pid = -1;
         boolean verbose = false;
         loop: while (iter.hasNext()) {
             String arg = iter.next();
@@ -163,6 +171,15 @@ public class Main {
                     abort("Invalid port number: " + portStr);
                 }
                 port = Integer.parseInt(portStr);
+                break;
+            case "-P":
+                iter.remove();
+                String pidStr = iter.next();
+                iter.remove();
+                if (!pidStr.matches("\\d+")) {
+                    abort("Invalid PID: " + pidStr);
+                }
+                pid = Integer.parseInt(pidStr);
                 break;
             case "-v":
                 iter.remove();
@@ -184,7 +201,17 @@ public class Main {
                 }
             });
         }
-        try (JmxClient client = new JmxClient(host, port)) {
+        String addr;
+        if (pid >= 0) {
+            addr = JmxClient.getConnectorAddress(pid);
+            if (addr == null) {
+                help("[ERROR] Cannot attach process: pid=" + pid);
+                System.exit(1);
+            }
+        } else {
+            addr = JmxClient.getConnectorAddress(host, port);
+        }
+        try (JmxClient client = new JmxClient(addr)) {
             String cmd = argList.remove(0);
             switch (cmd) {
             case "list": // list [PATTERN]
