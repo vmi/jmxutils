@@ -18,6 +18,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.management.RuntimeMBeanException;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
@@ -90,8 +91,8 @@ public class JmxClient implements Closeable {
                 }
                 try {
                     attrValue = connection.getAttribute(objectName, attrName);
-                } catch (AttributeNotFoundException | MBeanException | UnmarshalException e) {
-                    attrValue = String.format("%s: %s", e.getClass().getCanonicalName(), e.getMessage());
+                } catch (AttributeNotFoundException | MBeanException | UnmarshalException | RuntimeMBeanException e) {
+                    attrValue = String.format("[%s] %s", e.getClass().getCanonicalName(), e.getMessage());
                 }
                 map.put(attrName, attrValue, attrType, attrDesc);
             }
