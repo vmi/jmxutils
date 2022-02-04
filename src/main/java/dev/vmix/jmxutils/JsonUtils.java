@@ -3,7 +3,6 @@
  */
 package dev.vmix.jmxutils;
 
-@SuppressWarnings("javadoc")
 public final class JsonUtils {
 
     private JsonUtils() {

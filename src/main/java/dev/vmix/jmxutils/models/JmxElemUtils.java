@@ -11,7 +11,6 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
 
-@SuppressWarnings("javadoc")
 public final class JmxElemUtils {
 
     private JmxElemUtils() {

@@ -30,8 +30,6 @@ import dev.vmix.jmxutils.models.JmxMap;
  */
 public class JmxClient implements Closeable {
 
-    private static final String NL = System.lineSeparator();
-
     private final JMXConnector connector;
     private final MBeanServerConnection connection;
 

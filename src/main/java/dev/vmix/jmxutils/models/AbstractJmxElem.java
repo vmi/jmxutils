@@ -5,7 +5,6 @@ package dev.vmix.jmxutils.models;
 
 import java.util.Objects;
 
-@SuppressWarnings("javadoc")
 public abstract class AbstractJmxElem<T> implements JmxElem<T> {
 
     final String name;

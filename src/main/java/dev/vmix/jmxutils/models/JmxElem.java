@@ -5,7 +5,6 @@ package dev.vmix.jmxutils.models;
 
 import java.util.Arrays;
 
-@SuppressWarnings("javadoc")
 public interface JmxElem<T> {
 
     public enum ElemType {

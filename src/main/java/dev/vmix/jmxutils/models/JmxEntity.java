@@ -3,7 +3,6 @@
  */
 package dev.vmix.jmxutils.models;
 
-@SuppressWarnings("javadoc")
 public class JmxEntity<T> extends AbstractJmxElem<T> {
 
     JmxEntity(String name, T value, String typeName, String description) {

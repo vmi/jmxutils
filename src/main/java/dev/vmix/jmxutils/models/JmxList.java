@@ -6,7 +6,6 @@ package dev.vmix.jmxutils.models;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressWarnings("javadoc")
 public class JmxList extends AbstractJmxElem<List<JmxElem<?>>> {
 
     JmxList(String name, String valueTypeName, String description) {

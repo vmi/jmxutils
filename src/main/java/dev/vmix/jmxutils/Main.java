@@ -20,7 +20,6 @@ import dev.vmix.jmxutils.models.JmxMap;
 /**
  * JMX Utility Main
  */
-@SuppressWarnings("javadoc")
 public class Main {
 
     private static final String[] HELP_MESSAGE = {
@@ -58,18 +57,6 @@ public class Main {
             buf.append("  ");
         }
         return buf.toString();
-    }
-
-    private static boolean isBasicType(String typeName) {
-        switch (typeName) {
-        case "int":
-        case "long":
-        case "boolean":
-        case "java.lang.String":
-            return true;
-        default:
-            return false;
-        }
     }
 
     private void list(JmxClient client, List<String> argList) throws IOException {

@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-@SuppressWarnings("javadoc")
 public class JmxMap extends AbstractJmxElem<Map<String, JmxElem<?>>> {
 
     JmxMap(String name, String valueTypeName, String description) {
